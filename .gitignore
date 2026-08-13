@@ -1,0 +1,48 @@
+# Python
+
+**pycache**/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+
+.venv/
+venv/
+env/
+ENV/
+
+# IDE
+
+.vscode/
+.idea/
+
+# PyInstaller
+
+build/
+dist/
+*.spec.bak
+
+# Application data
+
+config.json
+cache.db
+cache.db-shm
+cache.db-wal
+
+# Logs
+
+*.log
+
+# Temporary files
+
+*.tmp
+*.temp
+
+# OS files
+
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Bundled FFmpeg
+ffmpeg/
