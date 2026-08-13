@@ -30,7 +30,7 @@ Two versions are available:
 
 ## Download
 
-Download the latest release from the **Releases** page.
+Download the latest release from the [Releases](https://github.com/RsClad-STUDIO/Music-Cover-Art-Manage/releases/latest) page.
 
 The release package includes FFmpeg, so you do not need to install FFmpeg separately.
 
