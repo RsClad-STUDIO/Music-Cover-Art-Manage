@@ -27,7 +27,11 @@ GUI版とCLI版の2種類を提供しています。
 
 ## Download
 
+<<<<<<< HEAD
 最新版は [Releases](https://github.com/RsClad-STUDIO/Music-Cover-Art-Manage/releases/latest) からダウンロードできます。
+=======
+最新版は [Releases](https://github.com/RsClad-STUDIO/Music-Cover-Art-Manage/releases/latest) からダウンロードできます。GitHub Releasesから最新版をダウンロードしてください。
+>>>>>>> 479457a (Update download links)
 
 配布版にはFFmpegが同梱されているため、別途FFmpegをインストールする必要はありません。
 
