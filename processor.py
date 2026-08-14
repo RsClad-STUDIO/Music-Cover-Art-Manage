@@ -67,14 +67,18 @@ def get_images_info(path: Path):
     return images
 
 def update_audio_images(path: Path, updated_images: list):
+    """updated_images: ImageInfo オブジェクトのリスト"""
     ext = path.suffix.lower()
     try:
         if ext == ".mp3":
             tags = ID3(str(path))
-            for k in [k for k in tags.keys() if k.startswith("APIC")]: del tags[k]
+            # 既存のAPICを削除
+            apic_keys = [k for k in tags.keys() if k.startswith("APIC")]
+            for k in apic_keys: del tags[k]
+            # 新しいJPEG画像を元のタイプ/説明で追加
             for img in updated_images:
                 tags.add(APIC(encoding=3, mime=JPEG_MIME, type=img.type, desc=img.desc, data=img.data))
-            tags.save()
+            tags.save(str(path)) # ID3バージョンを維持
         elif ext == ".flac":
             audio = FLAC(str(path))
             audio.clear_pictures()

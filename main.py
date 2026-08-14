@@ -11,10 +11,13 @@ def main():
     config = Config()
     cache = Cache()
     engine = CoreEngine(config, cache)
+    
+    # Ctrl+C で停止
     signal.signal(signal.SIGINT, lambda s, f: engine.stop_event.set())
 
     if not config.data["music_dir"]:
-        config.data["music_dir"] = input("Music Directory Path: ").strip('"')
+        path = input("Music Directory Path: ").strip('"')
+        config.data["music_dir"] = path
         config.save()
 
     print(f"\n[1/2] Scanning: {config.data['music_dir']}")
@@ -29,11 +32,10 @@ def main():
     print(f"\n\nScan Result:\n - Total: {s['total']}\n - To Process: {s['dirty']}\n - Already JPEG: {s['already_jpeg']}\n - No Cover: {s['no_cover']}")
     
     if s['dirty'] == 0:
-        input("\nNo files to process. Press Enter to exit...")
+        print("\nNo files need processing.")
         return
 
     if input("\nStart conversion? (y/n): ").lower() != 'y':
-        input("\nCancelled. Press Enter to exit...")
         return
 
     print("\n[2/2] Processing...")
@@ -43,7 +45,6 @@ def main():
 
     engine.process(res, p_proc)
     print("\n\nFinished.")
-    input("\nPress Enter to exit...")
 
 if __name__ == "__main__":
     main()
