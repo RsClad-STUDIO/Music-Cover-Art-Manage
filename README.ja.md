@@ -237,8 +237,8 @@ Music Cover Art Manage/
 GUI版とCLI版それぞれにPyInstallerの`.spec`ファイルを使用しています。
 
 ```text
-Music Cover Art Manage.spec
-Music Cover Art Manage CLI.spec
+packaging/Music Cover Art Manage.spec
+packaging/Music Cover Art Manage CLI.spec
 ```
 
 ---
@@ -304,7 +304,7 @@ Windows / Python 3.11環境で以下を実行してください。
 
 ```powershell
 python -m pip install mutagen==1.47.0 pytest==8.4.2
-python -m compileall -q .
+python -m compileall -q src tests main.py gui_main.py
 python -m pytest -q
 ```
 
