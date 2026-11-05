@@ -212,7 +212,7 @@ class MainWindow(QMainWindow):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     if getattr(sys, "frozen", False):
-        icon_path = os.path.join(os.path.dirname(sys.executable), "icon.ico")
+        icon_path = os.path.join(sys._MEIPASS, "icon.ico")
     else:
         icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icon.ico")
     if os.path.isfile(icon_path):
