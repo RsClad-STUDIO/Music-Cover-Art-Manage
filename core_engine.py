@@ -30,6 +30,7 @@ class CoreEngine:
         self.stop_event = threading.Event()
         self._lock = threading.Lock()
         self.processed_count = 0
+        self.process_stats = {"success": 0, "error": 0, "skipped": 0}
 
     @staticmethod
     def _worker_count(value, default=4):
@@ -133,8 +134,9 @@ class CoreEngine:
         self.stop_event.clear()
         total_dirty = int(scan_result.stats.get("dirty", 0))
         self.processed_count = 0
+        self.process_stats = {"success": 0, "error": 0, "skipped": 0}
         if total_dirty == 0:
-            return
+            return dict(self.process_stats)
 
         music_dir = str(self.config.data.get("music_dir", ""))
         env_id = self._get_env_id(music_dir)
@@ -190,9 +192,20 @@ class CoreEngine:
                     if future.cancelled():
                         continue
                     try:
-                        self.cache.update_entries(future.result())
+                        entries = future.result()
+                        self.cache.update_entries(entries)
+                        with self._lock:
+                            for _path, _mtime, status in entries:
+                                if status == "ok":
+                                    self.process_stats["success"] += 1
+                                elif str(status).startswith("error:"):
+                                    self.process_stats["error"] += 1
+                                else:
+                                    self.process_stats["skipped"] += 1
                     except Exception:
                         LOGGER.exception("Album processing worker failed")
+                        with self._lock:
+                            self.process_stats["error"] += 1
 
             if optimizer and not self.stop_event.is_set():
                 optimizer.end_segment()
@@ -200,6 +213,7 @@ class CoreEngine:
         if optimizer and not self.stop_event.is_set():
             if optimizer.save_result(self.config.data):
                 self.config.save()
+        return dict(self.process_stats)
 
     def _process_folder_internal(
         self, folder, files, scan_result, sub_workers, optimizer,
