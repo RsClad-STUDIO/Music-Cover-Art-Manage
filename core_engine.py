@@ -130,7 +130,6 @@ class CoreEngine:
         return result
 
     def process(self, scan_result, progress_callback=None):
-        self.stop_event.clear()
         total_dirty = int(scan_result.stats.get("dirty", 0))
         self.processed_count = 0
         self.process_stats = {"success": 0, "error": 0, "skipped": 0}
