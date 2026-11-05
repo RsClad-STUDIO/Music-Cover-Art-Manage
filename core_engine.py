@@ -187,7 +187,8 @@ class CoreEngine:
                     if self.stop_event.is_set():
                         for pending in futures:
                             pending.cancel()
-                        break
+                    if future.cancelled():
+                        continue
                     try:
                         self.cache.update_entries(future.result())
                     except Exception:
@@ -217,6 +218,7 @@ class CoreEngine:
                     images = processor.get_images_info(file_path)
                 if not images:
                     cache_updates.append((str(file_path), os.path.getmtime(file_path), "no_cover"))
+                    self._update_progress_atomic(progress_callback, total_dirty, file_path.name, optimizer)
                     continue
 
                 for image in images:
