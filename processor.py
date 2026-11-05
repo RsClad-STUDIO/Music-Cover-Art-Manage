@@ -129,6 +129,9 @@ def update_audio_images(path: Path, updated_images: list):
                     desc=image.desc, data=image.data
                 ))
             version = tags.version[1] if tags.version and tags.version[0] == 2 else 4
+            # Mutagen only writes ID3v2.3 or v2.4; upgrade legacy v2.2 tags.
+            if version < 3:
+                version = 3
             tags.save(str(path), v2_version=version)
         elif ext == ".flac":
             audio = FLAC(str(path))
