@@ -23,3 +23,25 @@ def test_invalid_config_does_not_crash(tmp_path, monkeypatch):
 
     subject = config_manager.Config()
     assert subject.data["music_dir"] == ""
+
+
+def test_config_normalizes_invalid_values(tmp_path, monkeypatch):
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps({
+            "music_dir": None,
+            "ffmpeg_path": 42,
+            "workers": "invalid",
+            "sub_workers": 100,
+            "optimized_results": [],
+        }),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(config_manager, "CONFIG_FILE", str(config_path))
+
+    subject = config_manager.Config()
+    assert subject.data["music_dir"] == ""
+    assert subject.data["ffmpeg_path"].endswith("ffmpeg.exe")
+    assert subject.data["workers"] == "Auto"
+    assert subject.data["sub_workers"] == 32
+    assert subject.data["optimized_results"] == {}
