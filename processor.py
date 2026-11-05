@@ -47,7 +47,7 @@ def to_jpeg_bytes(image_bytes: bytes, ffmpeg_path: str) -> bytes:
 
     command = [
         executable, "-hide_banner", "-loglevel", "error", "-nostdin",
-        "-y", "-i", "pipe:0", "-frames:v", "1", "-f", "image2",
+        "-y", "-i", "pipe:0", "-frames:v", "1", "-f", "mjpeg",
         "-vcodec", "mjpeg", "-q:v", "3", "pipe:1",
     ]
     creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
