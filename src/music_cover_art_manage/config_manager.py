@@ -6,7 +6,6 @@ import sys
 import tempfile
 from pathlib import Path
 
-CONFIG_FILE = str(get_app_dir() / "config.json")
 LOGGER = logging.getLogger(__name__)
 
 
@@ -15,6 +14,9 @@ def get_app_dir() -> Path:
     if getattr(sys, "frozen", False):
         return Path(sys.executable).resolve().parent
     return Path(__file__).resolve().parents[2]
+
+
+CONFIG_FILE = str(get_app_dir() / "config.json")
 
 
 def get_bundled_ffmpeg() -> Path:
