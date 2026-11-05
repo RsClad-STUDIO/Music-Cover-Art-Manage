@@ -25,6 +25,9 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.config = Config()
+        resolved_ffmpeg = resolve_ffmpeg_path(self.config.data.get("ffmpeg_path"))
+        if os.path.isfile(resolved_ffmpeg):
+            self.config.data["ffmpeg_path"] = resolved_ffmpeg
         self.cache = Cache()
         self.is_dark = True
         self.scan_results = None
@@ -54,11 +57,15 @@ class MainWindow(QMainWindow):
         self.dir_edit.setPlaceholderText(r"Example: C:\Music or Y:\Music")
         self.ff_edit = QLineEdit(self.config.data["ffmpeg_path"])
         self.ff_edit.setPlaceholderText("Bundled FFmpeg is detected automatically")
-        for label, edit in (("Music Dir:", self.dir_edit), ("FFmpeg:", self.ff_edit)):
-            row = QHBoxLayout()
-            row.addWidget(QLabel(label))
-            row.addWidget(edit)
-            card_layout.addLayout(row)
+        music_row = QHBoxLayout()
+        music_row.addWidget(QLabel("Music Dir:"))
+        music_row.addWidget(self.dir_edit)
+        music_row.addWidget(self.browse_btn)
+        card_layout.addLayout(music_row)
+        ffmpeg_row = QHBoxLayout()
+        ffmpeg_row.addWidget(QLabel("FFmpeg:"))
+        ffmpeg_row.addWidget(self.ff_edit)
+        card_layout.addLayout(ffmpeg_row)
         layout.addWidget(card)
 
         button_layout = QHBoxLayout()
@@ -79,6 +86,13 @@ class MainWindow(QMainWindow):
         self.log_area = QPlainTextEdit()
         self.log_area.setReadOnly(True)
         layout.addWidget(self.log_area)
+
+    def browse_music_dir(self):
+        selected = QFileDialog.getExistingDirectory(
+            self, "Select music folder", self.dir_edit.text().strip().strip('"')
+        )
+        if selected:
+            self.dir_edit.setText(selected)
 
     def apply_theme(self):
         self.setStyleSheet(gui_style.get_stylesheet(self.is_dark))
