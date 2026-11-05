@@ -1,6 +1,8 @@
 name: Python tests
 
 on:
+  push:
+    branches: [improve/reliability-performance-ux]
   pull_request:
     branches: [main]
   workflow_dispatch:
