@@ -109,13 +109,13 @@ Correct:
 C:\Music
 ```
 
-Incorrect:
+Not recommended (surrounding quotes are removed automatically):
 
 ```text
 "C:\Music"
 ```
 
-Enter the path directly without quotation marks.
+Entering the path without quotation marks is recommended.
 
 ---
 
