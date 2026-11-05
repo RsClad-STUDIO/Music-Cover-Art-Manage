@@ -55,6 +55,8 @@ class MainWindow(QMainWindow):
         card_layout = QVBoxLayout(card)
         self.dir_edit = QLineEdit(self.config.data["music_dir"])
         self.dir_edit.setPlaceholderText(r"Example: C:\Music or Y:\Music")
+        self.browse_btn = QPushButton("Browse...")
+        self.browse_btn.clicked.connect(self.browse_music_dir)
         self.ff_edit = QLineEdit(self.config.data["ffmpeg_path"])
         self.ff_edit.setPlaceholderText("Bundled FFmpeg is detected automatically")
         music_row = QHBoxLayout()
