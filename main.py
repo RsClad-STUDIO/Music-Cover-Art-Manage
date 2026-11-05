@@ -68,11 +68,15 @@ def main():
             )
             sys.stdout.flush()
 
-        engine.process(result, process_progress)
+        summary = engine.process(result, process_progress)
         if engine.stop_event.is_set():
             print("\n\nProcessing cancelled.")
             return 130
-        print("\n\nFinished.")
+        print("\n\nConversion Result:")
+        print(f" - Success: {summary.get('success', 0)}")
+        print(f" - Errors: {summary.get('error', 0)}")
+        print(f" - Skipped: {summary.get('skipped', 0)}")
+        print("\nFinished.")
         return 0
     except KeyboardInterrupt:
         engine.stop()
