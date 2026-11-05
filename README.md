@@ -83,7 +83,7 @@ Music Cover Art Manage.exe
 
 ### 1. Select a Scan Path
 
-Specify the folder containing your music files.
+Specify the folder containing your music files. You can type the path or use the **Browse...** button.
 
 Example:
 
@@ -101,7 +101,7 @@ Y:\Music
 
 ### Path Input Note
 
-Do **not** surround the path with double quotes.
+Avoid surrounding the path with double quotes. The GUI and CLI also remove surrounding quotes for compatibility.
 
 Correct:
 
@@ -315,6 +315,22 @@ These files are intentionally not required in a clean distribution.
 They are generated automatically for each user's environment.
 
 This also prevents personal configuration and cache data from being included in the distributed application.
+
+---
+
+# Tests
+
+The project includes regression tests for configuration handling, scan-cache behavior, cancellation, optimizer state, and MP3 artwork metadata.
+
+Run on Windows with Python 3.11:
+
+```powershell
+python -m pip install mutagen==1.47.0 pytest==8.4.2
+python -m compileall -q .
+python -m pytest -q
+```
+
+GitHub Actions runs the same checks on Windows for pull requests.
 
 ---
 
