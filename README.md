@@ -258,8 +258,8 @@ The `ffmpeg` directory is also required for cover art conversion.
 The GUI and CLI versions use separate PyInstaller specification files:
 
 ```text
-Music Cover Art Manage.spec
-Music Cover Art Manage CLI.spec
+packaging/Music Cover Art Manage.spec
+packaging/Music Cover Art Manage CLI.spec
 ```
 
 ---
@@ -329,7 +329,7 @@ Run on Windows with Python 3.11:
 
 ```powershell
 python -m pip install mutagen==1.47.0 pytest==8.4.2
-python -m compileall -q .
+python -m compileall -q src tests main.py gui_main.py
 python -m pytest -q
 ```
 
