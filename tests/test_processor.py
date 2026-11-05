@@ -12,7 +12,7 @@ def test_fit_to_width_handles_long_strings_and_zero_width():
 
 def test_mp3_artwork_update_preserves_picture_metadata(tmp_path):
     from mutagen.id3 import APIC, ID3
-    from processor import ImageInfo, update_audio_images
+    from music_cover_art_manage.processor import ImageInfo, update_audio_images
 
     audio_path = tmp_path / "track.mp3"
     audio_path.write_bytes(b"")
