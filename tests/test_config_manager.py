@@ -45,3 +45,26 @@ def test_config_normalizes_invalid_values(tmp_path, monkeypatch):
     assert subject.data["workers"] == "Auto"
     assert subject.data["sub_workers"] == 32
     assert subject.data["optimized_results"] == {}
+
+
+def test_bundled_ffmpeg_is_used_when_saved_path_is_missing(tmp_path, monkeypatch):
+    bundled = tmp_path / "ffmpeg" / "ffmpeg.exe"
+    bundled.parent.mkdir()
+    bundled.write_bytes(b"")
+    monkeypatch.setattr(config_manager, "get_bundled_ffmpeg", lambda: bundled)
+    monkeypatch.setattr(config_manager.shutil, "which", lambda _name: None)
+
+    resolved = config_manager.resolve_ffmpeg_path(str(tmp_path / "missing.exe"))
+
+    assert resolved == str(bundled)
+
+
+def test_explicit_ffmpeg_path_takes_precedence(tmp_path, monkeypatch):
+    custom = tmp_path / "custom-ffmpeg.exe"
+    custom.write_bytes(b"")
+    bundled = tmp_path / "ffmpeg" / "ffmpeg.exe"
+    bundled.parent.mkdir()
+    bundled.write_bytes(b"")
+    monkeypatch.setattr(config_manager, "get_bundled_ffmpeg", lambda: bundled)
+
+    assert config_manager.resolve_ffmpeg_path(str(custom)) == str(custom.resolve())
