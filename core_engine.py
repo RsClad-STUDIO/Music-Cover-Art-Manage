@@ -41,7 +41,6 @@ class CoreEngine:
         return max(MIN_WORKERS, min(MAX_WORKERS, count))
 
     def scan(self, music_dir, progress_callback=None) -> ScanResult:
-        self.stop_event.clear()
         result = ScanResult()
         cache_map = self.cache.load_all_to_dict()
         all_files = []
