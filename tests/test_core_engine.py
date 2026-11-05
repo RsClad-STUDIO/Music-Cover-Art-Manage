@@ -66,6 +66,7 @@ def test_scan_respects_cancellation_requested_before_start(tmp_path):
     result = engine.scan(str(tmp_path))
 
     assert result.stats["total"] == 0
+    assert result.cancelled is True
 
 
 def test_process_respects_cancellation_requested_before_start(tmp_path):
@@ -80,4 +81,4 @@ def test_process_respects_cancellation_requested_before_start(tmp_path):
 
     summary = engine.process(scan_result)
 
-    assert summary == {"success": 0, "error": 0, "skipped": 0}
+    assert summary == {"success": 0, "error": 0, "skipped": 0, "cancelled": True}
