@@ -21,6 +21,7 @@ class ScanResult:
         self.stats = defaultdict(int)
         self.scanned_data = []
         self.dirty_images = {}
+        self.cancelled = False
 
 
 class CoreEngine:
@@ -127,6 +128,7 @@ class CoreEngine:
                     except Exception:
                         LOGGER.exception("Scan progress callback failed")
 
+        result.cancelled = self.stop_event.is_set()
         return result
 
     def process(self, scan_result, progress_callback=None):
@@ -134,7 +136,7 @@ class CoreEngine:
         self.processed_count = 0
         self.process_stats = {"success": 0, "error": 0, "skipped": 0}
         if total_dirty == 0:
-            return dict(self.process_stats)
+            return {**self.process_stats, "cancelled": self.stop_event.is_set()}
 
         music_dir = str(self.config.data.get("music_dir", ""))
         env_id = self._get_env_id(music_dir)
@@ -211,7 +213,7 @@ class CoreEngine:
         if optimizer and not self.stop_event.is_set():
             if optimizer.save_result(self.config.data):
                 self.config.save()
-        return dict(self.process_stats)
+        return {**self.process_stats, "cancelled": self.stop_event.is_set()}
 
     def _process_folder_internal(
         self, folder, files, scan_result, sub_workers, optimizer,
