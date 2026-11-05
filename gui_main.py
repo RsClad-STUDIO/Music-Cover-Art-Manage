@@ -138,6 +138,7 @@ class MainWindow(QMainWindow):
             return
         self.config.data["ffmpeg_path"] = self.ff_edit.text().strip().strip('"')
         self.config.save()
+        self.last_process_stats = None
         self.progress_bar.setValue(0)
         self.start_btn.setEnabled(False)
         self.scan_btn.setEnabled(False)
