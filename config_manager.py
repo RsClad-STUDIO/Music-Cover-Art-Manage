@@ -61,8 +61,30 @@ class Config:
             if not isinstance(loaded, dict):
                 raise ValueError("Configuration root must be a JSON object")
             self.data.update(loaded)
+            self._normalize()
         except (OSError, UnicodeError, json.JSONDecodeError, ValueError) as exc:
             LOGGER.warning("Could not load %s: %s", CONFIG_FILE, exc)
+
+    def _normalize(self):
+        if not isinstance(self.data.get("music_dir"), str):
+            self.data["music_dir"] = ""
+        if not isinstance(self.data.get("ffmpeg_path"), str):
+            self.data["ffmpeg_path"] = str(get_bundled_ffmpeg())
+
+        for key in ("workers", "sub_workers"):
+            value = self.data.get(key, "Auto")
+            if value == "Auto":
+                continue
+            try:
+                value = int(value)
+            except (TypeError, ValueError):
+                value = "Auto"
+            if value != "Auto":
+                value = max(1, min(32, value))
+            self.data[key] = value
+
+        if not isinstance(self.data.get("optimized_results"), dict):
+            self.data["optimized_results"] = {}
 
     def save(self):
         directory = os.path.dirname(os.path.abspath(CONFIG_FILE))
