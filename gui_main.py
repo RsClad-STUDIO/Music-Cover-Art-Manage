@@ -157,8 +157,13 @@ class MainWindow(QMainWindow):
                 f"Already JPEG: {stats['already_jpeg']} | "
                 f"No Cover: {stats['no_cover']} | Errors: {stats['error']}"
             )
-            self.start_btn.setEnabled(stats["dirty"] > 0)
-            self.status_label.setText("Scan completed")
+            if result.cancelled:
+                self.start_btn.setEnabled(False)
+                self.status_label.setText("Scan cancelled")
+                self.log_area.appendPlainText("Scan was cancelled before completion.")
+            else:
+                self.start_btn.setEnabled(stats["dirty"] > 0)
+                self.status_label.setText("Scan completed")
             self.progress_bar.setValue(100)
         elif isinstance(result, dict):
             self.last_process_stats = result
@@ -168,7 +173,10 @@ class MainWindow(QMainWindow):
                 f"Errors: {result.get('error', 0)} | "
                 f"Skipped: {result.get('skipped', 0)}"
             )
-            if result.get("error", 0):
+            if result.get("cancelled"):
+                self.status_label.setText("Conversion cancelled")
+                self.start_btn.setEnabled(True)
+            elif result.get("error", 0):
                 self.status_label.setText("Completed with errors")
                 self.start_btn.setEnabled(True)
             else:
@@ -188,11 +196,18 @@ class MainWindow(QMainWindow):
         if self.worker_mode == "scan":
             self.start_btn.setEnabled(
                 self.scan_results is not None
+                and not self.scan_results.cancelled
                 and self.scan_results.stats.get("dirty", 0) > 0
             )
         else:
             self.start_btn.setEnabled(
-                bool(self.last_process_stats and self.last_process_stats.get("error", 0))
+                bool(
+                    self.last_process_stats
+                    and (
+                        self.last_process_stats.get("error", 0)
+                        or self.last_process_stats.get("cancelled", False)
+                    )
+                )
             )
         self.worker = None
         self.worker_mode = None
