@@ -70,7 +70,7 @@ def test_scan_respects_cancellation_requested_before_start(tmp_path):
 
 
 def test_process_respects_cancellation_requested_before_start(tmp_path):
-    from core_engine import ScanResult
+    from music_cover_art_manage.core_engine import ScanResult
 
     engine = CoreEngine(FakeConfig(), MemoryCache({}))
     engine.stop()
