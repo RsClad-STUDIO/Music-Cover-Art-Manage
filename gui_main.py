@@ -32,6 +32,8 @@ class MainWindow(QMainWindow):
         self.is_dark = True
         self.scan_results = None
         self.worker = None
+        self.worker_mode = None
+        self.last_process_stats = None
         self.init_ui()
         self.apply_theme()
 
@@ -109,6 +111,7 @@ class MainWindow(QMainWindow):
         worker.error_occurred.connect(self.on_worker_error)
         worker.finished.connect(self.on_worker_stopped)
         self.worker = worker
+        self.worker_mode = worker.mode
         worker.start()
 
     def start_scan(self):
@@ -122,6 +125,7 @@ class MainWindow(QMainWindow):
         self.config.data["ffmpeg_path"] = self.ff_edit.text().strip().strip('"')
         self.config.save()
         self.scan_results = None
+        self.last_process_stats = None
         self.progress_bar.setValue(0)
         self.log_area.clear()
         self.scan_btn.setEnabled(False)
@@ -143,11 +147,11 @@ class MainWindow(QMainWindow):
         )
 
     def on_worker_result(self, result):
-        if result is not None:
+        if hasattr(result, "stats") and hasattr(result, "dirty_images"):
             self.scan_results = result
             stats = result.stats
             self.log_area.appendPlainText(
-                "Scan Complete\n"
+                "Scan Complete\\n"
                 f"Total: {stats['total']} | Dirty: {stats['dirty']} | "
                 f"Already JPEG: {stats['already_jpeg']} | "
                 f"No Cover: {stats['no_cover']} | Errors: {stats['error']}"
@@ -155,20 +159,42 @@ class MainWindow(QMainWindow):
             self.start_btn.setEnabled(stats["dirty"] > 0)
             self.status_label.setText("Scan completed")
             self.progress_bar.setValue(100)
-        else:
-            self.status_label.setText("Conversion completed")
-            self.log_area.appendPlainText("Conversion completed.")
+        elif isinstance(result, dict):
+            self.last_process_stats = result
+            self.log_area.appendPlainText(
+                "Conversion Complete\\n"
+                f"Success: {result.get('success', 0)} | "
+                f"Errors: {result.get('error', 0)} | "
+                f"Skipped: {result.get('skipped', 0)}"
+            )
+            if result.get("error", 0):
+                self.status_label.setText("Completed with errors")
+                self.start_btn.setEnabled(True)
+            else:
+                self.status_label.setText("Conversion completed")
+                self.start_btn.setEnabled(False)
+            self.progress_bar.setValue(100)
 
     def on_worker_error(self, message):
+        if self.worker_mode == "process":
+            self.last_process_stats = {"success": 0, "error": 1, "skipped": 0}
         self.status_label.setText("Operation failed")
         self.log_area.appendPlainText(f"Error: {message}")
         QMessageBox.critical(self, "Operation failed", message)
 
     def on_worker_stopped(self):
         self.scan_btn.setEnabled(True)
-        if self.scan_results is not None and self.scan_results.stats.get("dirty", 0) > 0:
-            self.start_btn.setEnabled(True)
+        if self.worker_mode == "scan":
+            self.start_btn.setEnabled(
+                self.scan_results is not None
+                and self.scan_results.stats.get("dirty", 0) > 0
+            )
+        else:
+            self.start_btn.setEnabled(
+                bool(self.last_process_stats and self.last_process_stats.get("error", 0))
+            )
         self.worker = None
+        self.worker_mode = None
 
     def update_progress(self, value, name):
         self.progress_bar.setValue(value)
