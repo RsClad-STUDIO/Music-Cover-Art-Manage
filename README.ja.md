@@ -258,18 +258,18 @@ ffmpeg/
 
 # Project Structure
 
-開発環境では、GUI・CLI・処理系などを分離した構成になっています。
+```text
+Music-Cover-Art-Manage/
+├── src/music_cover_art_manage/  # GUI・CLI共通のアプリケーション本体
+├── assets/                      # アイコン等の静的リソース
+├── packaging/                   # PyInstallerビルド定義
+├── tests/                       # 自動テスト
+├── .github/workflows/           # GitHub Actions
+├── main.py                      # CLI互換エントリーポイント
+└── gui_main.py                  # GUI互換エントリーポイント
+```
 
-主な役割は以下の通りです。
-
-
-| Component | Description                          |
-| --------- | ------------------------------------ |
-| GUI       | グラフィカルユーザーインターフェース |
-| CLI       | コマンドラインインターフェース       |
-| Processor | FFmpegを使用した変換処理             |
-| Database  | スキャン結果・キャッシュの管理       |
-| Config    | アプリケーション設定の管理           |
+設定ファイル・キャッシュDBはアプリケーションの実行ディレクトリに生成されます。FFmpegは従来どおり配布フォルダ直下の `ffmpeg/ffmpeg.exe` を使用します。
 
 ---
 

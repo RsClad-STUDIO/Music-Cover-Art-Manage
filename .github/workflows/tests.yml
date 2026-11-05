@@ -2,7 +2,7 @@ name: Python tests
 
 on:
   push:
-    branches: [improve/reliability-performance-ux]
+    branches: [improve/reliability-performance-ux, refactor/project-structure]
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened, edited]
@@ -14,7 +14,7 @@ permissions:
 jobs:
   test:
     runs-on: windows-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -28,10 +28,10 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt pytest==8.4.2 pyinstaller==6.21.0
       - name: Compile Python modules
-        run: python -m compileall -q .
+        run: python -m compileall -q src tests main.py gui_main.py
       - name: Run unit tests
         run: python -m pytest -q
       - name: Build GUI distribution
-        run: python -m PyInstaller --noconfirm --clean "Music Cover Art Manage.spec"
+        run: python -m PyInstaller --noconfirm --clean "packaging/Music Cover Art Manage.spec"
       - name: Build CLI distribution
-        run: python -m PyInstaller --noconfirm --clean "Music Cover Art Manage CLI.spec"
+        run: python -m PyInstaller --noconfirm --clean "packaging/Music Cover Art Manage CLI.spec"

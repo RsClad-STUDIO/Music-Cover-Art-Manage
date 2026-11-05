@@ -1,7 +1,7 @@
 from types import SimpleNamespace
 
-import processor
-from core_engine import CoreEngine
+from music_cover_art_manage import processor
+from music_cover_art_manage.core_engine import CoreEngine
 
 
 class MemoryCache:

@@ -279,17 +279,20 @@ This keeps the application executable and FFmpeg as separate components.
 
 ---
 
-# Project Components
+# Project Structure
 
+```text
+Music-Cover-Art-Manage/
+├── src/music_cover_art_manage/  # Application package
+├── assets/                      # Static resources
+├── packaging/                   # PyInstaller specifications
+├── tests/                       # Automated tests
+├── .github/workflows/           # GitHub Actions
+├── main.py                      # CLI compatibility entry point
+└── gui_main.py                  # GUI compatibility entry point
+```
 
-| Component | Description                               |
-| --------- | ----------------------------------------- |
-| GUI       | Graphical user interface                  |
-| CLI       | Command-line interface                    |
-| Processor | Media and cover art processing            |
-| Database  | Scan and cache data management            |
-| Config    | Application configuration management      |
-| FFmpeg    | Cover art conversion and media processing |
+Runtime configuration and cache files are created beside the executable (or in the project root when running from source). FFmpeg remains in the distribution-level `ffmpeg/ffmpeg.exe` directory.
 
 ---
 

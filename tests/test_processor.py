@@ -1,4 +1,4 @@
-from processor import fit_to_width
+from music_cover_art_manage.processor import fit_to_width
 
 
 def test_fit_to_width_keeps_east_asian_characters_aligned():

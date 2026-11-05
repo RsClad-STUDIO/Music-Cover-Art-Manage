@@ -1,6 +1,6 @@
 import json
 
-import config_manager
+from music_cover_art_manage import config_manager
 
 
 def test_config_save_is_atomic_and_round_trips(tmp_path, monkeypatch):

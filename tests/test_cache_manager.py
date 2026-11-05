@@ -1,6 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 
-import cache_manager
+from music_cover_art_manage import cache_manager
 
 
 def test_cache_serializes_concurrent_writes(tmp_path, monkeypatch):

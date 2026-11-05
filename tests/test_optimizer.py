@@ -1,5 +1,5 @@
-import optimizer
-from optimizer import PerformanceOptimizer, PerfConfig
+from music_cover_art_manage import optimizer
+from music_cover_art_manage.optimizer import PerformanceOptimizer, PerfConfig
 
 
 def test_short_baseline_segment_is_not_discarded(monkeypatch):
