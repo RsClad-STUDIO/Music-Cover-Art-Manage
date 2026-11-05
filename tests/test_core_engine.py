@@ -66,3 +66,18 @@ def test_scan_respects_cancellation_requested_before_start(tmp_path):
     result = engine.scan(str(tmp_path))
 
     assert result.stats["total"] == 0
+
+
+def test_process_respects_cancellation_requested_before_start(tmp_path):
+    from core_engine import ScanResult
+
+    engine = CoreEngine(FakeConfig(), MemoryCache({}))
+    engine.stop()
+    scan_result = ScanResult()
+    scan_result.stats["dirty"] = 1
+    audio_file = tmp_path / "track.mp3"
+    scan_result.groups[audio_file.parent].append(audio_file)
+
+    summary = engine.process(scan_result)
+
+    assert summary == {"success": 0, "error": 0, "skipped": 0}
