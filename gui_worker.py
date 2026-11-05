@@ -36,8 +36,8 @@ class WorkerThread(QThread):
                 self.cache.update_entries(result.scanned_data)
                 self.result_ready.emit(result)
             elif self.mode == "process":
-                self.engine.process(self.scan_result, report_progress)
-                self.result_ready.emit(None)
+                summary = self.engine.process(self.scan_result, report_progress)
+                self.result_ready.emit(summary)
             else:
                 raise ValueError(f"Unknown worker mode: {self.mode}")
         except Exception as exc:
