@@ -57,3 +57,12 @@ def test_cached_error_is_retried_on_next_scan(tmp_path, monkeypatch):
     assert calls == [True]
     assert result.stats["error"] == 1
     assert result.scanned_data == [(str(audio_file), mtime, "error:permission")]
+
+
+def test_scan_respects_cancellation_requested_before_start(tmp_path):
+    engine = CoreEngine(FakeConfig(), MemoryCache({}))
+    engine.stop()
+
+    result = engine.scan(str(tmp_path))
+
+    assert result.stats["total"] == 0
