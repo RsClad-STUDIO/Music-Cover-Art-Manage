@@ -296,11 +296,12 @@ class MainWindow(QMainWindow):
         self._eta_ema_rate = None
         self._eta_recent_rates = []
         self._eta_is_stable = False
+        self._eta_display_logged = False
         self._eta_alpha = 0.30
         self._eta_sample_interval = 0.5
         self._eta_min_warmup = 1.0
-        self._eta_stable_samples = 3
-        self._eta_stability_tolerance = 0.20
+        self._eta_stable_samples = 4
+        self._eta_stability_tolerance = 0.15
 
     def _timing_text(self, current=None, total=None):
         now = time.monotonic()
@@ -333,6 +334,9 @@ class MainWindow(QMainWindow):
                 remaining = max(0.0, (total - current) / rate)
         elapsed_text = self._format_duration(elapsed)
         remaining_text = self._format_duration(remaining) if remaining is not None else "計算中"
+        if remaining is not None and not getattr(self, "_eta_display_logged", False):
+            self._eta_display_logged = True
+            self._event(f"残り時間の予測を開始しました（経過: {elapsed_text} / 初回予測: {remaining_text}）")
         self.timing_label.setText(f"経過時間: {elapsed_text}  /  予想残り時間: {remaining_text}")
         return elapsed_text, remaining_text
 
