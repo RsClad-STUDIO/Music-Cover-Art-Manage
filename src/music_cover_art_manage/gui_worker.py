@@ -26,8 +26,15 @@ class WorkerThread(QThread):
     def run(self):
         try:
             def report_progress(current, total, name):
+                if name.startswith("SCAN_TARGET|"):
+                    self.progress.emit(0, name)
+                    return
                 percentage = int(current / max(1, total) * 100)
-                self.progress.emit(max(0, min(100, percentage)), f"{current}/{total} | {name}")
+                if name.startswith(("SUCCESS|", "SKIP|", "ERROR|")):
+                    kind, filename = name.split("|", 1)
+                    self.progress.emit(max(0, min(100, percentage)), f"{kind}|{current}/{total} | {filename}")
+                else:
+                    self.progress.emit(max(0, min(100, percentage)), f"{current}/{total} | {name}")
 
             if self.mode == "scan":
                 result = self.engine.scan(
