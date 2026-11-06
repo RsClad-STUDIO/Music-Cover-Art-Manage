@@ -20,17 +20,32 @@ def icon_path():
 
 class MainWindow(QMainWindow):
     def __init__(self):
+        startup_started = time.perf_counter()
         super().__init__()
         self.config = Config()
+        config_loaded = time.perf_counter()
         ff = resolve_ffmpeg_path(self.config.data.get("ffmpeg_path"))
         if os.path.isfile(ff):
             self.config.data["ffmpeg_path"] = ff
+        ffmpeg_resolved = time.perf_counter()
         self.cache = None
         self._setup_file_logging()
+        logging_ready = time.perf_counter()
         self.scan_results = self.worker = self.worker_mode = self.last_process_stats = None
         self.init_ui()
+        ui_built = time.perf_counter()
         QApplication.instance().styleHints().colorSchemeChanged.connect(self.apply_theme)
         self.apply_theme()
+        theme_applied = time.perf_counter()
+        logging.getLogger(__name__).info(
+            "Startup detail: config=%.3fs; FFmpeg lookup=%.3fs; logging setup=%.3fs; "
+            "widget construction=%.3fs; theme setup=%.3fs",
+            config_loaded - startup_started,
+            ffmpeg_resolved - config_loaded,
+            logging_ready - ffmpeg_resolved,
+            ui_built - logging_ready,
+            theme_applied - ui_built,
+        )
 
     def _setup_file_logging(self):
         """Write detailed diagnostics to a bounded log outside the music library."""
@@ -52,10 +67,14 @@ class MainWindow(QMainWindow):
         self.log_area.appendPlainText(f"{timestamp:%H:%M:%S}.{timestamp.microsecond // 1000:03d}  {message}")
 
     def init_ui(self):
+        phase_started = time.perf_counter()
+        phase_times = {}
         self.setWindowTitle("Music Cover Art Manage")
         self.setWindowIcon(QIcon(icon_path()))
         self.resize(1000, 760)
         self.setMinimumSize(760, 600)
+        phase_times["window setup and icon"] = time.perf_counter() - phase_started
+        phase_started = time.perf_counter()
         central = QWidget()
         self.setCentralWidget(central)
         root = QVBoxLayout(central)
@@ -72,6 +91,8 @@ class MainWindow(QMainWindow):
         head.addLayout(titles)
         head.addStretch()
         root.addLayout(head)
+        phase_times["header"] = time.perf_counter() - phase_started
+        phase_started = time.perf_counter()
 
         panel = QFrame()
         panel.setObjectName("Panel")
@@ -97,6 +118,8 @@ class MainWindow(QMainWindow):
         row.addWidget(self.ff_edit, 1)
         form.addLayout(row)
         root.addWidget(panel)
+        phase_times["library settings"] = time.perf_counter() - phase_started
+        phase_started = time.perf_counter()
 
         actions = QHBoxLayout()
         self.scan_btn = QPushButton("ライブラリをスキャン")
@@ -109,6 +132,8 @@ class MainWindow(QMainWindow):
         actions.addWidget(self.start_btn)
         actions.addStretch()
         root.addLayout(actions)
+        phase_times["action buttons"] = time.perf_counter() - phase_started
+        phase_started = time.perf_counter()
 
         progress = QFrame()
         progress.setObjectName("Panel")
@@ -124,6 +149,8 @@ class MainWindow(QMainWindow):
         self.timing_label.setObjectName("Muted")
         pl.addWidget(self.timing_label)
         root.addWidget(progress)
+        phase_times["progress panel"] = time.perf_counter() - phase_started
+        phase_started = time.perf_counter()
 
         loghead = QHBoxLayout()
         logtitle = QLabel("処理ログ")
@@ -145,6 +172,11 @@ class MainWindow(QMainWindow):
         self.log_area.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
         self.log_area.setPlaceholderText("処理の進行状況と結果がここに表示されます。")
         root.addWidget(self.log_area, 1)
+        phase_times["log panel"] = time.perf_counter() - phase_started
+        logging.getLogger(__name__).info(
+            "GUI construction detail: %s",
+            "; ".join(f"{name}={duration:.3f}s" for name, duration in phase_times.items()),
+        )
 
     def apply_theme(self, *_):
         """Apply the current operating-system color scheme."""
