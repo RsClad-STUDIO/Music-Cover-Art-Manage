@@ -2,7 +2,6 @@ import logging
 
 from PySide6.QtCore import QThread, Signal
 
-from .core_engine import CoreEngine
 
 LOGGER = logging.getLogger(__name__)
 
@@ -18,13 +17,23 @@ class WorkerThread(QThread):
         self.config = config
         self.cache = cache
         self.scan_result = scan_result
-        self.engine = CoreEngine(config, cache)
+        self.engine = None
+        self._stop_requested = False
 
     def stop(self):
-        self.engine.stop()
+        self._stop_requested = True
+        if self.engine is not None:
+            self.engine.stop()
 
     def run(self):
         try:
+            # Import the image-processing stack inside the worker thread so it
+            # does not delay the GUI or block the first scan button click.
+            from .core_engine import CoreEngine
+            self.engine = CoreEngine(self.config, self.cache)
+            if self._stop_requested:
+                self.engine.stop()
+
             def report_progress(current, total, name):
                 if name.startswith("SCAN_TARGET|"):
                     self.progress.emit(0, name)
