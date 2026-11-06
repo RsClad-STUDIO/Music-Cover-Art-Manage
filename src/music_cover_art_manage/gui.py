@@ -6,7 +6,7 @@ import time
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from PySide6.QtCore import Qt, QUrl
-from PySide6.QtGui import QDesktopServices, QIcon
+from PySide6.QtGui import QDesktopServices, QFontDatabase, QIcon
 from PySide6.QtWidgets import QApplication, QFileDialog, QFrame, QHBoxLayout, QLabel, QLineEdit, QMainWindow, QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QVBoxLayout, QWidget
 from .cache_manager import Cache
 from .config_manager import Config, resolve_ffmpeg_path
@@ -145,6 +145,7 @@ class MainWindow(QMainWindow):
         root.addLayout(loghead)
         self.log_area = QPlainTextEdit()
         self.log_area.setObjectName("Log")
+        self.log_area.setFont(QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont))
         self.log_area.setReadOnly(True)
         self.log_area.setMaximumBlockCount(2000)
         self.log_area.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
