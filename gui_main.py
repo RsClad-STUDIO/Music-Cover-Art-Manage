@@ -19,17 +19,21 @@ if __name__ == "__main__":
 
     window = MainWindow()
     window_initialized = time.perf_counter()
+    show_started = time.perf_counter()
     window.show()
+    show_returned = time.perf_counter()
     app.processEvents()
     first_paint_ready = time.perf_counter()
 
     logging.getLogger(__name__).info(
         "Startup timing: total=%.3fs; imports=%.3fs; QApplication=%.3fs; "
-        "MainWindow=%.3fs; first display=%.3fs",
+        "MainWindow=%.3fs; show()=%.3fs; processEvents()=%.3fs; first display=%.3fs",
         first_paint_ready - STARTUP_STARTED,
         qt_started - STARTUP_STARTED,
         qt_initialized - qt_started,
         window_initialized - qt_initialized,
+        show_returned - show_started,
+        first_paint_ready - show_returned,
         first_paint_ready - window_initialized,
     )
     sys.exit(app.exec())
