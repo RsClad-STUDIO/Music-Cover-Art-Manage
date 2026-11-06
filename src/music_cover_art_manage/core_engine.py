@@ -77,6 +77,11 @@ class CoreEngine:
                 LOGGER.warning("Could not scan directory %s: %s", directory, exc)
 
         result.stats["total"] = len(all_files)
+        if progress_callback:
+            try:
+                progress_callback(0, len(all_files), f"SCAN_TARGET|{len(all_files)}")
+            except Exception:
+                LOGGER.exception("Scan target progress callback failed")
 
         def check(path, mtime):
             cache_entry = cache_map.get(str(path))
@@ -232,7 +237,7 @@ class CoreEngine:
                     images = processor.get_images_info(file_path)
                 if not images:
                     cache_updates.append((str(file_path), os.path.getmtime(file_path), "no_cover"))
-                    self._update_progress_atomic(progress_callback, total_dirty, file_path.name, optimizer)
+                    self._update_progress_atomic(progress_callback, total_dirty, file_path.name, optimizer, "SKIP")
                     continue
 
                 for image in images:
@@ -254,7 +259,7 @@ class CoreEngine:
                     cache_updates.append((str(file_path), os.path.getmtime(file_path), status))
                 except OSError:
                     pass
-                self._update_progress_atomic(progress_callback, total_dirty, file_path.name, optimizer)
+                self._update_progress_atomic(progress_callback, total_dirty, file_path.name, optimizer, "ERROR")
 
         def update_one(file_path, images):
             if self.stop_event.is_set():
@@ -271,7 +276,8 @@ class CoreEngine:
                 entry = (str(file_path), os.path.getmtime(file_path), status)
             except OSError:
                 entry = (str(file_path), 0.0, "error:missing")
-            self._update_progress_atomic(progress_callback, total_dirty, file_path.name, optimizer)
+            progress_kind = "SUCCESS" if status == "ok" else ("SKIP" if not str(status).startswith("error:") else "ERROR")
+            self._update_progress_atomic(progress_callback, total_dirty, file_path.name, optimizer, progress_kind)
             return entry
 
         with ThreadPoolExecutor(
@@ -289,14 +295,14 @@ class CoreEngine:
 
         return cache_updates
 
-    def _update_progress_atomic(self, callback, total, name, optimizer):
+    def _update_progress_atomic(self, callback, total, name, optimizer, status="SUCCESS"):
         with self._lock:
             self.processed_count += 1
             if optimizer:
                 optimizer.record_file()
             if callback:
                 try:
-                    callback(self.processed_count, max(1, total), name)
+                    callback(self.processed_count, max(1, total), f"{status}|{name}")
                 except Exception:
                     LOGGER.exception("Processing progress callback failed")
 
