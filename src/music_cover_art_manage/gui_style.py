@@ -18,12 +18,12 @@ def get_stylesheet(is_dark):
             background-color: {bg};
             color: {fg};
             font-family: "Segoe UI", "Yu Gothic UI", sans-serif;
-            font-size: 9pt;
+            font-size: 10pt;
         }}
         QMainWindow {{ background-color: {bg}; }}
         QLabel {{ background: transparent; }}
-        QLabel#PageTitle {{ font-size: 15pt; font-weight: 600; }}
-        QLabel#SectionTitle {{ font-size: 9pt; font-weight: 600; }}
+        QLabel#PageTitle {{ font-size: 17pt; font-weight: 600; }}
+        QLabel#SectionTitle {{ font-size: 10pt; font-weight: 600; }}
         QLabel#Muted {{ color: {muted}; }}
 
         QFrame#Panel {{
@@ -37,7 +37,7 @@ def get_stylesheet(is_dark):
             color: {fg};
             border: 1px solid {border};
             border-radius: 2px;
-            padding: 4px 6px;
+            padding: 6px 8px;
             selection-background-color: {accent};
         }}
         QLineEdit:focus, QPlainTextEdit:focus {{
@@ -49,7 +49,7 @@ def get_stylesheet(is_dark):
             color: {button_fg};
             border: 1px solid {border};
             border-radius: 2px;
-            padding: 5px 10px;
+            padding: 7px 12px;
             font-weight: 400;
         }}
         QPushButton:hover {{ background-color: {hover}; }}
