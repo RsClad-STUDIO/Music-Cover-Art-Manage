@@ -138,6 +138,7 @@ class MainWindow(QMainWindow):
         self.log_area = QPlainTextEdit()
         self.log_area.setObjectName("Log")
         self.log_area.setReadOnly(True)
+        self.log_area.setMaximumBlockCount(2000)
         self.log_area.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
         self.log_area.setPlaceholderText("処理の進行状況と結果がここに表示されます。")
         root.addWidget(self.log_area, 1)
