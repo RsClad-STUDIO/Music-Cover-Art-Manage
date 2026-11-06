@@ -168,8 +168,6 @@ class MainWindow(QMainWindow):
             self.dir_edit.setText(path)
 
     def _connect_worker(self, worker):
-        from .gui_worker import WorkerThread
-
         worker.progress.connect(self.update_progress)
         worker.result_ready.connect(self.on_worker_result)
         worker.error_occurred.connect(self.on_worker_error)
@@ -210,6 +208,7 @@ class MainWindow(QMainWindow):
         self.scan_btn.setEnabled(False)
         self.start_btn.setEnabled(False)
         self.status_label.setText("スキャン中…")
+        from .gui_worker import WorkerThread
         self._connect_worker(WorkerThread("scan", self.config, self.cache))
 
     def start_conversion(self):
@@ -230,6 +229,7 @@ class MainWindow(QMainWindow):
         self._last_progress_log = datetime.now()
         self._event("アートワークの最適化を開始しました")
         self._event(f"最適化対象: {self.scan_results.stats.get('dirty', 0)}件")
+        from .gui_worker import WorkerThread
         self._connect_worker(WorkerThread("process", self.config, self.cache, self.scan_results))
 
     def on_worker_result(self, result):
