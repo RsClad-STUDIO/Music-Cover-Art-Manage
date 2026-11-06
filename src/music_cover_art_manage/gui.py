@@ -195,7 +195,8 @@ class MainWindow(QMainWindow):
         self.progress_bar.setValue(0)
         self.log_area.clear()
         self._last_progress_log = datetime.now()
-        self._event(f'スキャン開始: {folder}')
+        self._event("ライブラリの確認を開始しました")
+        self._event(f"対象フォルダー: {folder}")
         self.scan_btn.setEnabled(False)
         self.start_btn.setEnabled(False)
         self.status_label.setText("ライブラリをスキャンしています…")
@@ -212,14 +213,16 @@ class MainWindow(QMainWindow):
         self.scan_btn.setEnabled(False)
         self.status_label.setText("カバーアートを最適化しています…")
         self._last_progress_log = datetime.now()
-        self._event(f"最適化開始: 対象 {self.scan_results.stats.get('dirty', 0)} ファイル")
+        self._event("アートワークの最適化を開始しました")
+        self._event(f"最適化対象: {self.scan_results.stats.get('dirty', 0)}件")
         self._connect_worker(WorkerThread("process", self.config, self.cache, self.scan_results))
 
     def on_worker_result(self, result):
         if hasattr(result, "stats") and hasattr(result, "dirty_images"):
             self.scan_results = result
             s = result.stats
-            self._event(f"スキャン完了 — 対象: {s['total']} | 要最適化: {s['dirty']} | JPEG済み: {s['already_jpeg']} | カバーなし: {s['no_cover']} | エラー: {s['error']}")
+            self._event("ライブラリの確認が完了しました")
+            self._event(f"検出: {s['total']}件 / 最適化対象: {s['dirty']}件 / JPEG済み: {s['already_jpeg']}件 / カバーなし: {s['no_cover']}件 / エラー: {s['error']}件")
             if result.cancelled:
                 self.start_btn.setEnabled(False)
                 self.status_label.setText("スキャンはキャンセルされました")
@@ -230,7 +233,8 @@ class MainWindow(QMainWindow):
             self.progress_bar.setValue(100)
         elif isinstance(result, dict):
             self.last_process_stats = result
-            self._event(f"最適化完了 — 成功: {result.get('success', 0)} | エラー: {result.get('error', 0)} | スキップ: {result.get('skipped', 0)}")
+            self._event("アートワークの最適化が完了しました")
+            self._event(f"結果: 成功 {result.get('success', 0)}件 / スキップ {result.get('skipped', 0)}件 / 失敗 {result.get('error', 0)}件")
             if result.get("cancelled"):
                 self.status_label.setText("最適化はキャンセルされました")
                 self.start_btn.setEnabled(True)
@@ -259,6 +263,21 @@ class MainWindow(QMainWindow):
 
     def update_progress(self, value, name):
         self.progress_bar.setValue(value)
+        if name.startswith("SCAN_TARGET|"):
+            total = name.split("|", 1)[1]
+            self.status_label.setText(f"スキャン対象を確認しました: {total}件")
+            self._event(f"スキャン対象: {total}ファイル")
+            return
+        if name.startswith(("SUCCESS|", "SKIP|", "ERROR|")):
+            kind, detail = name.split("|", 1)
+            if kind == "SUCCESS":
+                self._event(f"[成功] {detail} — アートワークを更新しました")
+            elif kind == "SKIP":
+                self._event(f"[スキップ] {detail}")
+            else:
+                self._event(f"[警告] {detail}", logging.WARNING)
+            self.status_label.setText(f"処理中: {value}%")
+            return
         self.status_label.setText(f"処理中: {name}")
         now = datetime.now()
         previous = getattr(self, "_last_progress_log", None)
