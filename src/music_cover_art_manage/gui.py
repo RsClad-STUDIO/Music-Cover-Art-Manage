@@ -276,7 +276,7 @@ class MainWindow(QMainWindow):
                 self._event(f"[スキップ] {detail}")
             else:
                 self._event(f"[警告] {detail}", logging.WARNING)
-            self.status_label.setText(f"処理中: {value}%")
+            self.status_label.setText(f"処理中: {detail}")
             return
         self.status_label.setText(f"処理中: {name}")
         now = datetime.now()
