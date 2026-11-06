@@ -293,6 +293,7 @@ class MainWindow(QMainWindow):
         now = time.monotonic()
         self._eta_last_sample_at = now
         self._eta_last_sample_count = 0
+        self._eta_has_baseline = False
         self._eta_ema_rate = None
         self._eta_recent_rates = []
         self._eta_is_stable = False
@@ -309,25 +310,31 @@ class MainWindow(QMainWindow):
         remaining = None
         if current is not None and total is not None and total > 0:
             current = max(0, min(int(current), int(total)))
-            interval = now - getattr(self, "_eta_last_sample_at", now)
-            count_delta = current - getattr(self, "_eta_last_sample_count", 0)
-            if interval >= getattr(self, "_eta_sample_interval", 0.5) and count_delta > 0:
-                rate = count_delta / interval
-                previous = getattr(self, "_eta_ema_rate", None)
-                alpha = getattr(self, "_eta_alpha", 0.30)
-                self._eta_ema_rate = rate if previous is None else alpha * rate + (1.0 - alpha) * previous
-                recent_rates = getattr(self, "_eta_recent_rates", [])
-                recent_rates.append(rate)
-                sample_limit = getattr(self, "_eta_stable_samples", 3)
-                self._eta_recent_rates = recent_rates[-sample_limit:]
+            if not getattr(self, "_eta_has_baseline", False):
+                # Establish the first sample point without treating startup delay as processing time.
                 self._eta_last_sample_at = now
                 self._eta_last_sample_count = current
+                self._eta_has_baseline = True
+            else:
+                interval = now - getattr(self, "_eta_last_sample_at", now)
+                count_delta = current - getattr(self, "_eta_last_sample_count", 0)
+                if interval >= getattr(self, "_eta_sample_interval", 0.5) and count_delta > 0:
+                    rate = count_delta / interval
+                    previous = getattr(self, "_eta_ema_rate", None)
+                    alpha = getattr(self, "_eta_alpha", 0.30)
+                    self._eta_ema_rate = rate if previous is None else alpha * rate + (1.0 - alpha) * previous
+                    recent_rates = getattr(self, "_eta_recent_rates", [])
+                    recent_rates.append(rate)
+                    sample_limit = getattr(self, "_eta_stable_samples", 4)
+                    self._eta_recent_rates = recent_rates[-sample_limit:]
+                    self._eta_last_sample_at = now
+                    self._eta_last_sample_count = current
 
-                if elapsed >= getattr(self, "_eta_min_warmup", 1.0) and len(self._eta_recent_rates) >= sample_limit:
-                    average_rate = sum(self._eta_recent_rates) / len(self._eta_recent_rates)
-                    rate_spread = max(self._eta_recent_rates) - min(self._eta_recent_rates)
-                    if average_rate > 0 and rate_spread <= average_rate * getattr(self, "_eta_stability_tolerance", 0.20):
-                        self._eta_is_stable = True
+                    if elapsed >= getattr(self, "_eta_min_warmup", 1.0) and len(self._eta_recent_rates) >= sample_limit:
+                        average_rate = sum(self._eta_recent_rates) / len(self._eta_recent_rates)
+                        rate_spread = max(self._eta_recent_rates) - min(self._eta_recent_rates)
+                        if average_rate > 0 and rate_spread <= average_rate * getattr(self, "_eta_stability_tolerance", 0.15):
+                            self._eta_is_stable = True
 
             rate = getattr(self, "_eta_ema_rate", None)
             if getattr(self, "_eta_is_stable", False) and rate is not None and rate > 0:
