@@ -117,6 +117,7 @@ class CoreEngine:
                     continue
 
                 result.stats[status.split(":", 1)[0]] += 1
+                LOGGER.info("Scan item: %s | status=%s", path, status)
                 if status == "dirty":
                     result.groups[path.parent].append(path)
                     result.dirty_images[path] = images or []
@@ -262,8 +263,9 @@ class CoreEngine:
             try:
                 processor.update_audio_images(file_path, images)
                 status = "ok"
+                LOGGER.info("Artwork optimized: %s", file_path)
             except Exception as exc:
-                LOGGER.warning("Could not update artwork in %s: %s", file_path, exc)
+                LOGGER.exception("Could not update artwork in %s", file_path)
                 status = str(exc)
                 if not status.startswith("error:"):
                     status = f"error:unknown:{status}"
