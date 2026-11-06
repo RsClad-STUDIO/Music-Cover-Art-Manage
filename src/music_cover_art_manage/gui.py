@@ -192,6 +192,8 @@ class MainWindow(QMainWindow):
         self.config.data["ffmpeg_path"] = self.ff_edit.text().strip().strip('"')
         self.config.save()
         self.scan_results = self.last_process_stats = None
+        self._progress_mode = "scan"
+        self._last_scan_log_percent = 0
         self.progress_bar.setValue(0)
         self.log_area.clear()
         self._last_progress_log = datetime.now()
@@ -208,6 +210,7 @@ class MainWindow(QMainWindow):
         self.config.data["ffmpeg_path"] = self.ff_edit.text().strip().strip('"')
         self.config.save()
         self.last_process_stats = None
+        self._progress_mode = "process"
         self.progress_bar.setValue(0)
         self.start_btn.setEnabled(False)
         self.scan_btn.setEnabled(False)
@@ -279,6 +282,20 @@ class MainWindow(QMainWindow):
             self.status_label.setText(f"処理中: {detail}")
             return
         self.status_label.setText(f"処理中: {name}")
+        if getattr(self, "_progress_mode", None) == "scan":
+            try:
+                count_text, _filename = name.split(" | ", 1)
+                current_text, total_text = count_text.split("/", 1)
+                current, total = int(current_text), int(total_text)
+            except (ValueError, TypeError):
+                return
+            percent = int(current * 100 / max(1, total))
+            bucket = (percent // 10) * 10
+            previous_bucket = getattr(self, "_last_scan_log_percent", 0)
+            if bucket >= 10 and bucket > previous_bucket:
+                self._event(f"スキャン進捗: {bucket}% — {current:,} / {total:,}件")
+                self._last_scan_log_percent = bucket
+            return
         now = datetime.now()
         previous = getattr(self, "_last_progress_log", None)
         if previous is not None and (now - previous).total_seconds() >= 5:
