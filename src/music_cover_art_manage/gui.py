@@ -102,22 +102,34 @@ class MainWindow(QMainWindow):
         section = QLabel("ライブラリ設定")
         section.setObjectName("SectionTitle")
         form.addWidget(section)
+        phase_times["settings panel and heading"] = time.perf_counter() - phase_started
+        phase_started = time.perf_counter()
+
         row = QHBoxLayout()
         row.addWidget(QLabel("音楽フォルダー"))
         self.dir_edit = QLineEdit(self.config.data["music_dir"])
         self.dir_edit.setPlaceholderText(r"例: C:\Music または Y:\Music")
+        phase_times["music folder input"] = time.perf_counter() - phase_started
+        phase_started = time.perf_counter()
         self.browse_btn = QPushButton("参照…")
         self.browse_btn.clicked.connect(self.browse_music_dir)
         row.addWidget(self.dir_edit, 1)
         row.addWidget(self.browse_btn)
         form.addLayout(row)
+        phase_times["browse button and first row layout"] = time.perf_counter() - phase_started
+        phase_started = time.perf_counter()
+
         row = QHBoxLayout()
         row.addWidget(QLabel("FFmpeg"))
         self.ff_edit = QLineEdit(self.config.data["ffmpeg_path"])
         self.ff_edit.setPlaceholderText("FFmpeg実行ファイルのパス")
         row.addWidget(self.ff_edit, 1)
         form.addLayout(row)
+        phase_times["FFmpeg input and second row"] = time.perf_counter() - phase_started
+        phase_started = time.perf_counter()
+
         root.addWidget(panel)
+        phase_times["settings panel insertion"] = time.perf_counter() - phase_started
         phase_times["library settings"] = time.perf_counter() - phase_started
         phase_started = time.perf_counter()
 
