@@ -194,6 +194,7 @@ class MainWindow(QMainWindow):
         self.scan_results = self.last_process_stats = None
         self._progress_mode = "scan"
         self._last_scan_log_percent = 0
+        self._last_scan_log_time = datetime.now()
         self.progress_bar.setValue(0)
         self.log_area.clear()
         self._last_progress_log = datetime.now()
@@ -292,9 +293,14 @@ class MainWindow(QMainWindow):
             percent = int(current * 100 / max(1, total))
             bucket = (percent // 10) * 10
             previous_bucket = getattr(self, "_last_scan_log_percent", 0)
-            if bucket >= 10 and bucket > previous_bucket:
-                self._event(f"スキャン進捗: {bucket}% — {current:,} / {total:,}件")
+            last_log_time = getattr(self, "_last_scan_log_time", datetime.now())
+            elapsed = (datetime.now() - last_log_time).total_seconds()
+            reached_ten_percent = bucket >= 10 and bucket > previous_bucket
+            reached_five_seconds = elapsed >= 5
+            if reached_ten_percent or reached_five_seconds:
+                self._event(f"スキャン進捗: {percent}% — {current:,} / {total:,}件")
                 self._last_scan_log_percent = bucket
+                self._last_scan_log_time = datetime.now()
             return
         now = datetime.now()
         previous = getattr(self, "_last_progress_log", None)
