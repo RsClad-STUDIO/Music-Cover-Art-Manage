@@ -201,6 +201,7 @@ class MainWindow(QMainWindow):
         self._progress_mode = "scan"
         self._task_started_at = time.monotonic()
         self._task_total = None
+        self._reset_eta()
         self.timing_label.setText("経過時間: 00:00.000  /  残り予測: 計算中")
         self._last_scan_log_percent = 0
         self._last_scan_log_time = datetime.now()
@@ -223,6 +224,7 @@ class MainWindow(QMainWindow):
         self._progress_mode = "process"
         self._task_started_at = time.monotonic()
         self._task_total = int(self.scan_results.stats.get("dirty", 0))
+        self._reset_eta()
         self.timing_label.setText("経過時間: 00:00.000  /  残り予測: 計算中")
         self.progress_bar.setValue(0)
         self.start_btn.setEnabled(False)
@@ -287,11 +289,32 @@ class MainWindow(QMainWindow):
         secs, millis = divmod(remainder, 1000)
         return f"{hours:02d}:{minutes:02d}:{secs:02d}.{millis:03d}" if hours else f"{minutes:02d}:{secs:02d}.{millis:03d}"
 
+    def _reset_eta(self):
+        now = time.monotonic()
+        self._eta_last_sample_at = now
+        self._eta_last_sample_count = 0
+        self._eta_ema_rate = None
+        self._eta_alpha = 0.30
+        self._eta_sample_interval = 0.5
+
     def _timing_text(self, current=None, total=None):
-        elapsed = time.monotonic() - getattr(self, "_task_started_at", time.monotonic())
+        now = time.monotonic()
+        elapsed = now - getattr(self, "_task_started_at", now)
         remaining = None
-        if current and total and current >= 2 and elapsed >= 0.5:
-            remaining = max(0, elapsed * (total - current) / current)
+        if current is not None and total is not None and total > 0:
+            current = max(0, min(int(current), int(total)))
+            interval = now - getattr(self, "_eta_last_sample_at", now)
+            count_delta = current - getattr(self, "_eta_last_sample_count", 0)
+            if interval >= getattr(self, "_eta_sample_interval", 0.5) and count_delta > 0:
+                rate = count_delta / interval
+                previous = getattr(self, "_eta_ema_rate", None)
+                alpha = getattr(self, "_eta_alpha", 0.30)
+                self._eta_ema_rate = rate if previous is None else alpha * rate + (1.0 - alpha) * previous
+                self._eta_last_sample_at = now
+                self._eta_last_sample_count = current
+            rate = getattr(self, "_eta_ema_rate", None)
+            if rate is not None and rate > 0:
+                remaining = max(0.0, (total - current) / rate)
         elapsed_text = self._format_duration(elapsed)
         remaining_text = self._format_duration(remaining) if remaining is not None else "計算中"
         self.timing_label.setText(f"経過時間: {elapsed_text}  /  予想残り時間: {remaining_text}")
