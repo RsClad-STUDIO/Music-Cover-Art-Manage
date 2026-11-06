@@ -237,7 +237,7 @@ class CoreEngine:
                     images = processor.get_images_info(file_path)
                 if not images:
                     cache_updates.append((str(file_path), os.path.getmtime(file_path), "no_cover"))
-                    self._update_progress_atomic(progress_callback, total_dirty, file_path.name, optimizer, "SKIP")
+                    self._update_progress_atomic(progress_callback, total_dirty, f"{file_path.name} — カバー画像なし", optimizer, "SKIP")
                     continue
 
                 for image in images:
@@ -259,7 +259,7 @@ class CoreEngine:
                     cache_updates.append((str(file_path), os.path.getmtime(file_path), status))
                 except OSError:
                     pass
-                self._update_progress_atomic(progress_callback, total_dirty, file_path.name, optimizer, "ERROR")
+                self._update_progress_atomic(progress_callback, total_dirty, f"{file_path.name} — {status}", optimizer, "ERROR")
 
         def update_one(file_path, images):
             if self.stop_event.is_set():
@@ -277,7 +277,7 @@ class CoreEngine:
             except OSError:
                 entry = (str(file_path), 0.0, "error:missing")
             progress_kind = "SUCCESS" if status == "ok" else ("SKIP" if not str(status).startswith("error:") else "ERROR")
-            self._update_progress_atomic(progress_callback, total_dirty, file_path.name, optimizer, progress_kind)
+            self._update_progress_atomic(progress_callback, total_dirty, f"{file_path.name}" if status == "ok" else f"{file_path.name} — {status}", optimizer, progress_kind)
             return entry
 
         with ThreadPoolExecutor(
