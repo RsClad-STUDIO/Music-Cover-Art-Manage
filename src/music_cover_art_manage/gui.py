@@ -4,8 +4,8 @@ import os
 import sys
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon
+from PySide6.QtCore import Qt, QUrl
+from PySide6.QtGui import QDesktopServices, QIcon
 from PySide6.QtWidgets import QApplication, QFileDialog, QFrame, QHBoxLayout, QLabel, QLineEdit, QMainWindow, QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QVBoxLayout, QWidget
 from .cache_manager import Cache
 from .config_manager import Config, resolve_ffmpeg_path
@@ -131,6 +131,9 @@ class MainWindow(QMainWindow):
         logtitle.setObjectName("SectionTitle")
         loghead.addWidget(logtitle)
         loghead.addStretch()
+        open_logs = QPushButton("ログフォルダーを開く")
+        open_logs.clicked.connect(self.open_log_folder)
+        loghead.addWidget(open_logs)
         clear = QPushButton("ログをクリア")
         clear.clicked.connect(self.log_area_clear)
         loghead.addWidget(clear)
@@ -157,6 +160,14 @@ class MainWindow(QMainWindow):
 
     def log_area_clear(self):
         self.log_area.clear()
+
+    def open_log_folder(self):
+        log_dir = os.path.dirname(self.log_file_path)
+        if not os.path.isdir(log_dir):
+            QMessageBox.warning(self, "ログフォルダーがありません", "ログ保存先が見つかりません。")
+            return
+        if not QDesktopServices.openUrl(QUrl.fromLocalFile(log_dir)):
+            QMessageBox.warning(self, "開けませんでした", f"ログフォルダーを開けませんでした。\\n{log_dir}")
 
     def browse_music_dir(self):
         path = QFileDialog.getExistingDirectory(self, "音楽フォルダーを選択", self.dir_edit.text().strip().strip('"'))
