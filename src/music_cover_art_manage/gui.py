@@ -94,6 +94,7 @@ class MainWindow(QMainWindow):
         phase_times["header"] = time.perf_counter() - phase_started
         phase_started = time.perf_counter()
 
+        settings_started = phase_started
         panel = QFrame()
         panel.setObjectName("Panel")
         form = QVBoxLayout(panel)
@@ -130,7 +131,7 @@ class MainWindow(QMainWindow):
 
         root.addWidget(panel)
         phase_times["settings panel insertion"] = time.perf_counter() - phase_started
-        phase_times["library settings"] = time.perf_counter() - phase_started
+        phase_times["library settings total"] = time.perf_counter() - settings_started
         phase_started = time.perf_counter()
 
         actions = QHBoxLayout()
