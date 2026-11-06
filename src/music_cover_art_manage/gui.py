@@ -1,6 +1,9 @@
 import ctypes
+import logging
 import os
 import sys
+from datetime import datetime
+from logging.handlers import RotatingFileHandler
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication, QFileDialog, QFrame, QHBoxLayout, QLabel, QLineEdit, QMainWindow, QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QVBoxLayout, QWidget
@@ -24,11 +27,30 @@ class MainWindow(QMainWindow):
         if os.path.isfile(ff):
             self.config.data["ffmpeg_path"] = ff
         self.cache = Cache()
+        self._setup_file_logging()
         self.scan_results = self.worker = self.worker_mode = self.last_process_stats = None
         self.theme_mode = "auto"
         self.init_ui()
         QApplication.instance().styleHints().colorSchemeChanged.connect(self.apply_theme)
         self.apply_theme()
+
+    def _setup_file_logging(self):
+        """Write detailed diagnostics to a bounded log outside the music library."""
+        base = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
+        log_dir = os.path.join(base, "MusicCoverArtManage", "logs")
+        os.makedirs(log_dir, exist_ok=True)
+        path = os.path.abspath(os.path.join(log_dir, "music-cover-art-manage.log"))
+        root_logger = logging.getLogger()
+        if not any(getattr(h, "baseFilename", None) == path for h in root_logger.handlers):
+            handler = RotatingFileHandler(path, maxBytes=2 * 1024 * 1024, backupCount=3, encoding="utf-8")
+            handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+            root_logger.addHandler(handler)
+        root_logger.setLevel(logging.INFO)
+        self.log_file_path = path
+
+    def _event(self, message, level=logging.INFO):
+        logging.getLogger(__name__).log(level, message)
+        self.log_area.appendPlainText(f"{datetime.now():%H:%M:%S}  {message}")
 
     def init_ui(self):
         self.setWindowTitle("Music Cover Art Manage")
@@ -160,6 +182,8 @@ class MainWindow(QMainWindow):
         self.scan_results = self.last_process_stats = None
         self.progress_bar.setValue(0)
         self.log_area.clear()
+        self._last_progress_log = None
+        self._event(f'スキャン開始: {folder}')
         self.scan_btn.setEnabled(False)
         self.start_btn.setEnabled(False)
         self.status_label.setText("ライブラリをスキャンしています…")
@@ -175,13 +199,15 @@ class MainWindow(QMainWindow):
         self.start_btn.setEnabled(False)
         self.scan_btn.setEnabled(False)
         self.status_label.setText("カバーアートを最適化しています…")
+        self._last_progress_log = None
+        self._event(f"最適化開始: 対象 {self.scan_results.stats.get('dirty', 0)} ファイル")
         self._connect_worker(WorkerThread("process", self.config, self.cache, self.scan_results))
 
     def on_worker_result(self, result):
         if hasattr(result, "stats") and hasattr(result, "dirty_images"):
             self.scan_results = result
             s = result.stats
-            self.log_area.appendPlainText(f"スキャン完了\n対象: {s['total']} | 要最適化: {s['dirty']} | JPEG済み: {s['already_jpeg']} | カバーなし: {s['no_cover']} | エラー: {s['error']}")
+            self._event(f"スキャン完了 — 対象: {s['total']} | 要最適化: {s['dirty']} | JPEG済み: {s['already_jpeg']} | カバーなし: {s['no_cover']} | エラー: {s['error']}")
             if result.cancelled:
                 self.start_btn.setEnabled(False)
                 self.status_label.setText("スキャンはキャンセルされました")
@@ -192,7 +218,7 @@ class MainWindow(QMainWindow):
             self.progress_bar.setValue(100)
         elif isinstance(result, dict):
             self.last_process_stats = result
-            self.log_area.appendPlainText(f"最適化完了\n成功: {result.get('success', 0)} | エラー: {result.get('error', 0)} | スキップ: {result.get('skipped', 0)}")
+            self._event(f"最適化完了 — 成功: {result.get('success', 0)} | エラー: {result.get('error', 0)} | スキップ: {result.get('skipped', 0)}")
             if result.get("cancelled"):
                 self.status_label.setText("最適化はキャンセルされました")
                 self.start_btn.setEnabled(True)
@@ -208,7 +234,7 @@ class MainWindow(QMainWindow):
         if self.worker_mode == "process":
             self.last_process_stats = {"success": 0, "error": 1, "skipped": 0}
         self.status_label.setText("処理に失敗しました")
-        self.log_area.appendPlainText(f"エラー: {message}")
+        self._event(f"エラー: {message}", logging.ERROR)
         QMessageBox.critical(self, "処理に失敗しました", message)
 
     def on_worker_stopped(self):
@@ -222,6 +248,11 @@ class MainWindow(QMainWindow):
     def update_progress(self, value, name):
         self.progress_bar.setValue(value)
         self.status_label.setText(f"処理中: {name}")
+        now = datetime.now()
+        previous = getattr(self, "_last_progress_log", None)
+        if previous is None or (now - previous).total_seconds() >= 5:
+            self._event(f"進捗 {value}% — {name}")
+            self._last_progress_log = now
 
     def closeEvent(self, event):
         if self.worker is not None and self.worker.isRunning():
