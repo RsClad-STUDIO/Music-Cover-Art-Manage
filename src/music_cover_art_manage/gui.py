@@ -198,11 +198,11 @@ class MainWindow(QMainWindow):
         self.progress_bar.setValue(0)
         self.log_area.clear()
         self._last_progress_log = datetime.now()
-        self._event("ライブラリの確認を開始しました")
+        self._event("スキャンを開始しました")
         self._event(f"対象フォルダー: {folder}")
         self.scan_btn.setEnabled(False)
         self.start_btn.setEnabled(False)
-        self.status_label.setText("ライブラリをスキャンしています…")
+        self.status_label.setText("スキャン中…")
         self._connect_worker(WorkerThread("scan", self.config, self.cache))
 
     def start_conversion(self):
@@ -225,7 +225,7 @@ class MainWindow(QMainWindow):
         if hasattr(result, "stats") and hasattr(result, "dirty_images"):
             self.scan_results = result
             s = result.stats
-            self._event("ライブラリの確認が完了しました")
+            self._event("スキャンが完了しました")
             self._event(f"検出: {s['total']}件 / 最適化対象: {s['dirty']}件 / JPEG済み: {s['already_jpeg']}件 / カバーなし: {s['no_cover']}件 / エラー: {s['error']}件")
             if result.cancelled:
                 self.start_btn.setEnabled(False)
@@ -269,7 +269,7 @@ class MainWindow(QMainWindow):
         self.progress_bar.setValue(value)
         if name.startswith("SCAN_TARGET|"):
             total = name.split("|", 1)[1]
-            self.status_label.setText(f"スキャン対象を確認しました: {total}件")
+            self.status_label.setText(f"スキャン対象: {total}件")
             self._event(f"スキャン対象: {total}ファイル")
             return
         if name.startswith(("SUCCESS|", "SKIP|", "ERROR|")):
