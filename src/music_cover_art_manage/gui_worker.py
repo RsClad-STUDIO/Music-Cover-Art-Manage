@@ -27,7 +27,7 @@ class WorkerThread(QThread):
         try:
             def report_progress(current, total, name):
                 percentage = int(current / max(1, total) * 100)
-                self.progress.emit(max(0, min(100, percentage)), str(name))
+                self.progress.emit(max(0, min(100, percentage)), f"{current}/{total} | {name}")
 
             if self.mode == "scan":
                 result = self.engine.scan(
