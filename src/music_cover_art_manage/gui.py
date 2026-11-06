@@ -8,9 +8,7 @@ from logging.handlers import RotatingFileHandler
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices, QFontDatabase, QIcon
 from PySide6.QtWidgets import QApplication, QFileDialog, QFrame, QHBoxLayout, QLabel, QLineEdit, QMainWindow, QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QVBoxLayout, QWidget
-from .cache_manager import Cache
 from .config_manager import Config, resolve_ffmpeg_path
-from .gui_worker import WorkerThread
 from . import gui_style
 
 if sys.platform == "win32":
@@ -27,7 +25,7 @@ class MainWindow(QMainWindow):
         ff = resolve_ffmpeg_path(self.config.data.get("ffmpeg_path"))
         if os.path.isfile(ff):
             self.config.data["ffmpeg_path"] = ff
-        self.cache = Cache()
+        self.cache = None
         self._setup_file_logging()
         self.scan_results = self.worker = self.worker_mode = self.last_process_stats = None
         self.init_ui()
@@ -170,6 +168,8 @@ class MainWindow(QMainWindow):
             self.dir_edit.setText(path)
 
     def _connect_worker(self, worker):
+        from .gui_worker import WorkerThread
+
         worker.progress.connect(self.update_progress)
         worker.result_ready.connect(self.on_worker_result)
         worker.error_occurred.connect(self.on_worker_error)
@@ -183,6 +183,14 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "フォルダーが無効です", "存在する音楽フォルダーを選択してください。")
             self.dir_edit.setFocus()
             return
+        if self.cache is None:
+            try:
+                from .cache_manager import Cache
+                self.cache = Cache()
+            except Exception as exc:
+                self._event(f"キャッシュを初期化できませんでした: {exc}", logging.ERROR)
+                QMessageBox.critical(self, "キャッシュを初期化できませんでした", str(exc))
+                return
         self.config.data["music_dir"] = folder
         self.config.data["ffmpeg_path"] = self.ff_edit.text().strip().strip('"')
         self.config.save()
@@ -405,7 +413,8 @@ class MainWindow(QMainWindow):
         if self.worker is not None and self.worker.isRunning():
             self.worker.stop()
             self.worker.wait()
-        self.cache.close()
+        if self.cache is not None:
+            self.cache.close()
         super().closeEvent(event)
 
 if __name__ == "__main__":
