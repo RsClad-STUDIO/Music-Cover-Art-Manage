@@ -328,6 +328,12 @@ class MainWindow(QMainWindow):
             else:
                 self._event(f"[警告] {detail}", logging.WARNING)
             self.status_label.setText(f"処理中: {detail}")
+            now = datetime.now()
+            previous = getattr(self, "_last_progress_log", None)
+            if previous is not None and (now - previous).total_seconds() >= 5:
+                progress_text = f"{current_count:,} / {total_count:,}件" if current_count is not None else f"{value}%"
+                self._event(f"最適化進捗: {progress_text}  |  経過: {elapsed_text}  |  残り予測: {remaining_text}")
+                self._last_progress_log = now
             return
         self.status_label.setText(f"処理中: {name}")
         if getattr(self, "_progress_mode", None) == "scan":
