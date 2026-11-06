@@ -108,9 +108,14 @@ class MainWindow(QMainWindow):
 
         row = QHBoxLayout()
         row.addWidget(QLabel("音楽フォルダー"))
+        phase_times["music folder label and row"] = time.perf_counter() - phase_started
+        phase_started = time.perf_counter()
+
         self.dir_edit = QLineEdit(self.config.data["music_dir"])
+        phase_times["first QLineEdit construction"] = time.perf_counter() - phase_started
+        phase_started = time.perf_counter()
         self.dir_edit.setPlaceholderText(r"例: C:\Music または Y:\Music")
-        phase_times["music folder input"] = time.perf_counter() - phase_started
+        phase_times["first QLineEdit setup"] = time.perf_counter() - phase_started
         phase_started = time.perf_counter()
         self.browse_btn = QPushButton("参照…")
         self.browse_btn.clicked.connect(self.browse_music_dir)
