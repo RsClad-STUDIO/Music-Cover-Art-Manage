@@ -194,7 +194,7 @@ class MainWindow(QMainWindow):
         self.scan_results = self.last_process_stats = None
         self.progress_bar.setValue(0)
         self.log_area.clear()
-        self._last_progress_log = None
+        self._last_progress_log = datetime.now()
         self._event(f'スキャン開始: {folder}')
         self.scan_btn.setEnabled(False)
         self.start_btn.setEnabled(False)
@@ -211,7 +211,7 @@ class MainWindow(QMainWindow):
         self.start_btn.setEnabled(False)
         self.scan_btn.setEnabled(False)
         self.status_label.setText("カバーアートを最適化しています…")
-        self._last_progress_log = None
+        self._last_progress_log = datetime.now()
         self._event(f"最適化開始: 対象 {self.scan_results.stats.get('dirty', 0)} ファイル")
         self._connect_worker(WorkerThread("process", self.config, self.cache, self.scan_results))
 
@@ -262,7 +262,7 @@ class MainWindow(QMainWindow):
         self.status_label.setText(f"処理中: {name}")
         now = datetime.now()
         previous = getattr(self, "_last_progress_log", None)
-        if previous is None or (now - previous).total_seconds() >= 5:
+        if previous is not None and (now - previous).total_seconds() >= 5:
             self._event(f"進捗 {value}% — {name}")
             self._last_progress_log = now
 
