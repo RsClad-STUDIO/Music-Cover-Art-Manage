@@ -33,8 +33,8 @@ class MainWindow(QMainWindow):
     def init_ui(self):
         self.setWindowTitle("Music Cover Art Manage")
         self.setWindowIcon(QIcon(icon_path()))
-        self.resize(1100, 820)
-        self.setMinimumSize(820, 640)
+        self.resize(1000, 760)
+        self.setMinimumSize(760, 600)
         central = QWidget()
         self.setCentralWidget(central)
         root = QVBoxLayout(central)
