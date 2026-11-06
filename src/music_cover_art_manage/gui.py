@@ -2,6 +2,7 @@ import ctypes
 import logging
 import os
 import sys
+import time
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from PySide6.QtCore import Qt, QUrl
@@ -125,6 +126,9 @@ class MainWindow(QMainWindow):
         self.progress_bar.setRange(0, 100)
         pl.addWidget(self.status_label)
         pl.addWidget(self.progress_bar)
+        self.timing_label = QLabel("経過時間: 00:00.000  /  残り予測: --:--.---")
+        self.timing_label.setObjectName("Muted")
+        pl.addWidget(self.timing_label)
         root.addWidget(progress)
 
         loghead = QHBoxLayout()
@@ -194,6 +198,9 @@ class MainWindow(QMainWindow):
         self.config.save()
         self.scan_results = self.last_process_stats = None
         self._progress_mode = "scan"
+        self._task_started_at = time.monotonic()
+        self._task_total = None
+        self.timing_label.setText("経過時間: 00:00.000  /  残り予測: 計算中")
         self._last_scan_log_percent = 0
         self._last_scan_log_time = datetime.now()
         self.progress_bar.setValue(0)
@@ -213,6 +220,9 @@ class MainWindow(QMainWindow):
         self.config.save()
         self.last_process_stats = None
         self._progress_mode = "process"
+        self._task_started_at = time.monotonic()
+        self._task_total = int(self.scan_results.stats.get("dirty", 0))
+        self.timing_label.setText("経過時間: 00:00.000  /  残り予測: 計算中")
         self.progress_bar.setValue(0)
         self.start_btn.setEnabled(False)
         self.scan_btn.setEnabled(False)
@@ -226,6 +236,7 @@ class MainWindow(QMainWindow):
         if hasattr(result, "stats") and hasattr(result, "dirty_images"):
             self.scan_results = result
             s = result.stats
+            self._log_task_duration("スキャン")
             self._event("スキャンが完了しました")
             self._event(f"検出: {s['total']}件 / 最適化対象: {s['dirty']}件 / JPEG済み: {s['already_jpeg']}件 / カバーなし: {s['no_cover']}件 / エラー: {s['error']}件")
             if result.cancelled:
@@ -238,6 +249,7 @@ class MainWindow(QMainWindow):
             self.progress_bar.setValue(100)
         elif isinstance(result, dict):
             self.last_process_stats = result
+            self._log_task_duration("最適化")
             self._event("アートワークの最適化が完了しました")
             self._event(f"結果: 成功 {result.get('success', 0)}件 / スキップ {result.get('skipped', 0)}件 / 失敗 {result.get('error', 0)}件")
             if result.get("cancelled"):
@@ -266,12 +278,46 @@ class MainWindow(QMainWindow):
             self.start_btn.setEnabled(bool(self.last_process_stats and (self.last_process_stats.get("error", 0) or self.last_process_stats.get("cancelled", False))))
         self.worker = self.worker_mode = None
 
+    @staticmethod
+    def _format_duration(seconds):
+        milliseconds = int(max(0, seconds) * 1000)
+        hours, remainder = divmod(milliseconds, 3_600_000)
+        minutes, remainder = divmod(remainder, 60_000)
+        secs, millis = divmod(remainder, 1000)
+        return f"{hours:02d}:{minutes:02d}:{secs:02d}.{millis:03d}" if hours else f"{minutes:02d}:{secs:02d}.{millis:03d}"
+
+    def _timing_text(self, current=None, total=None):
+        elapsed = time.monotonic() - getattr(self, "_task_started_at", time.monotonic())
+        remaining = None
+        if current and total and current >= 2 and elapsed >= 0.5:
+            remaining = max(0, elapsed * (total - current) / current)
+        elapsed_text = self._format_duration(elapsed)
+        remaining_text = self._format_duration(remaining) if remaining is not None else "計算中"
+        self.timing_label.setText(f"経過時間: {elapsed_text}  /  予想残り時間: {remaining_text}")
+        return elapsed_text, remaining_text
+
+    def _log_task_duration(self, label):
+        started = getattr(self, "_task_started_at", None)
+        if started is not None:
+            duration = self._format_duration(time.monotonic() - started)
+            self._event(f"{label}の所要時間: {duration}")
+            self.timing_label.setText(f"所要時間: {duration}")
+
     def update_progress(self, value, name):
         self.progress_bar.setValue(value)
+        count_name = name.split("|", 1)[1] if name.startswith(("SUCCESS|", "SKIP|", "ERROR|")) else name
+        try:
+            count_text = count_name.split(" | ", 1)[0]
+            current_text, total_text = count_text.split("/", 1)
+            current_count, total_count = int(current_text), int(total_text)
+        except (ValueError, TypeError):
+            current_count = total_count = None
+        elapsed_text, remaining_text = self._timing_text(current_count, total_count) if current_count is not None else self._timing_text()
         if name.startswith("SCAN_TARGET|"):
             total = name.split("|", 1)[1]
             self.status_label.setText(f"スキャン対象: {total}件")
             self._event(f"スキャン対象: {total}ファイル")
+            self._task_total = int(total)
             return
         if name.startswith(("SUCCESS|", "SKIP|", "ERROR|")):
             kind, detail = name.split("|", 1)
@@ -299,14 +345,14 @@ class MainWindow(QMainWindow):
             reached_ten_percent = bucket >= 10 and bucket > previous_bucket
             reached_five_seconds = elapsed >= 5
             if reached_ten_percent or reached_five_seconds:
-                self._event(f"スキャン進捗: {percent}% — {current:,} / {total:,}件")
+                self._event(f"スキャン進捗: {percent}% — {current:,} / {total:,}件  |  経過: {elapsed_text}  |  残り予測: {remaining_text}")
                 self._last_scan_log_percent = bucket
                 self._last_scan_log_time = datetime.now()
             return
         now = datetime.now()
         previous = getattr(self, "_last_progress_log", None)
         if previous is not None and (now - previous).total_seconds() >= 5:
-            self._event(f"進捗 {value}% — {name}")
+            self._event(f"進捗 {value}% — {name}  |  経過: {elapsed_text}  |  残り予測: {remaining_text}")
             self._last_progress_log = now
 
     def closeEvent(self, event):
