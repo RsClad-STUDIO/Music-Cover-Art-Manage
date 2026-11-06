@@ -50,7 +50,7 @@ class MainWindow(QMainWindow):
 
     def _event(self, message, level=logging.INFO):
         logging.getLogger(__name__).log(level, message)
-        self.log_area.appendPlainText(f"{datetime.now():%H:%M:%S}  {message}")
+        timestamp = datetime.now()\n        self.log_area.appendPlainText(f"{timestamp:%H:%M:%S}.{timestamp.microsecond // 1000:03d}  {message}")
 
     def init_ui(self):
         self.setWindowTitle("Music Cover Art Manage")
