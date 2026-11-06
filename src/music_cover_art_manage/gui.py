@@ -30,7 +30,6 @@ class MainWindow(QMainWindow):
         self.cache = Cache()
         self._setup_file_logging()
         self.scan_results = self.worker = self.worker_mode = self.last_process_stats = None
-        self.theme_mode = "auto"
         self.init_ui()
         QApplication.instance().styleHints().colorSchemeChanged.connect(self.apply_theme)
         self.apply_theme()
@@ -74,9 +73,6 @@ class MainWindow(QMainWindow):
         titles.addWidget(subtitle)
         head.addLayout(titles)
         head.addStretch()
-        self.theme_btn = QPushButton("テーマ: 自動")
-        self.theme_btn.clicked.connect(self.cycle_theme)
-        head.addWidget(self.theme_btn)
         root.addLayout(head)
 
         panel = QFrame()
@@ -153,16 +149,9 @@ class MainWindow(QMainWindow):
         root.addWidget(self.log_area, 1)
 
     def apply_theme(self, *_):
-        if self.theme_mode == "auto":
-            self.is_dark = QApplication.instance().styleHints().colorScheme() == Qt.ColorScheme.Dark
-        else:
-            self.is_dark = self.theme_mode == "dark"
+        """Apply the current operating-system color scheme."""
+        self.is_dark = QApplication.instance().styleHints().colorScheme() == Qt.ColorScheme.Dark
         self.setStyleSheet(gui_style.get_stylesheet(self.is_dark))
-        self.theme_btn.setText({"auto": "テーマ: 自動", "dark": "テーマ: ダーク", "light": "テーマ: ライト"}[self.theme_mode])
-
-    def cycle_theme(self):
-        self.theme_mode = {"auto": "dark", "dark": "light", "light": "auto"}[self.theme_mode]
-        self.apply_theme()
 
     def log_area_clear(self):
         self.log_area.clear()
