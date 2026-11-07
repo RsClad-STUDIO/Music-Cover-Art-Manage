@@ -2,6 +2,7 @@ import logging
 import os
 import platform
 import threading
+import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path, PureWindowsPath
@@ -42,8 +43,14 @@ class CoreEngine:
         return max(MIN_WORKERS, min(MAX_WORKERS, count))
 
     def scan(self, music_dir, progress_callback=None) -> ScanResult:
+        scan_started = time.perf_counter()
         result = ScanResult()
+
+        cache_load_started = time.perf_counter()
         cache_map = self.cache.load_all_to_dict()
+        cache_load_seconds = time.perf_counter() - cache_load_started
+
+        traversal_started = time.perf_counter()
         all_files = []
         root = Path(str(music_dir).strip().strip('"'))
         if not root.is_dir():
@@ -76,6 +83,7 @@ class CoreEngine:
                 result.stats["error"] += 1
                 LOGGER.warning("Could not scan directory %s: %s", directory, exc)
 
+        traversal_seconds = time.perf_counter() - traversal_started
         result.stats["total"] = len(all_files)
         if progress_callback:
             try:
@@ -107,8 +115,11 @@ class CoreEngine:
 
         configured_workers = self.config.data.get("workers", 4)
         workers = self._worker_count(configured_workers, 4)
+        scan_tasks_started = time.perf_counter()
+        submit_started = time.perf_counter()
         with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="cover-scan") as executor:
             futures = [executor.submit(check, path, mtime) for path, mtime in all_files]
+            submit_seconds = time.perf_counter() - submit_started
             for index, future in enumerate(as_completed(futures), start=1):
                 if self.stop_event.is_set():
                     for pending in futures:
@@ -133,7 +144,23 @@ class CoreEngine:
                     except Exception:
                         LOGGER.exception("Scan progress callback failed")
 
+        scan_tasks_seconds = time.perf_counter() - scan_tasks_started
         result.cancelled = self.stop_event.is_set()
+        LOGGER.info(
+            "DB scan timing: total=%.3fs; cache_load=%.3fs (%d entries); "
+            "directory_traversal=%.3fs (%d files); task_phase=%.3fs; "
+            "future_submission=%.3fs; workers=%d; cache_new_or_rechecked=%d; cancelled=%s",
+            time.perf_counter() - scan_started,
+            cache_load_seconds,
+            len(cache_map),
+            traversal_seconds,
+            len(all_files),
+            scan_tasks_seconds,
+            submit_seconds,
+            workers,
+            len(result.scanned_data),
+            result.cancelled,
+        )
         return result
 
     def process(self, scan_result, progress_callback=None):
