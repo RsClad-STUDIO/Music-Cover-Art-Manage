@@ -1,4 +1,5 @@
 import logging
+import time
 
 from PySide6.QtCore import QThread, Signal
 
@@ -49,7 +50,14 @@ class WorkerThread(QThread):
                 result = self.engine.scan(
                     self.config.data["music_dir"], report_progress
                 )
+                cache_write_started = time.perf_counter()
                 self.cache.update_entries(result.scanned_data)
+                cache_write_seconds = time.perf_counter() - cache_write_started
+                LOGGER.info(
+                    "DB scan cache persistence: %.3fs; rows=%d",
+                    cache_write_seconds,
+                    len(result.scanned_data),
+                )
                 self.result_ready.emit(result)
             elif self.mode == "process":
                 summary = self.engine.process(self.scan_result, report_progress)
